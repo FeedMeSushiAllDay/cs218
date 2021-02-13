@@ -108,8 +108,8 @@ _start:
 	mov rax, 0 ; clear the register
 
 ;	4. quadAnswer4 = doubleVariable4 (32 bit to 64 bit)
-	mov eax, dword[doubleVariable4]
-	mov qword[doubleAnswer4], eax
+	movsxd rax, dword[doubleVariable4]
+	mov qword[quadAnswer4], rax
 
 ;=====MOVSX=====
 ;	5. quadAnswer5 = doubleVariable5 (32 bit to 64 bit)
@@ -184,11 +184,12 @@ _start:
 
 ;	14. byteAnswer14 = byteVariable14a / byteVariable14b
 ;	      byteRemainder14 =  byteVariable14a % byteVariable14b
-	mov al, 0 
-    mov ah, byte[byteVariable14a] 
-    div byte[byteVariable14b]
-    mov byte[byteAnswer14], al
-    mov byte[byteRemainder14], ah
+	mov al, 0 	
+    ;mov ah, byte[byteVariable14a] 
+   ; div byte[byteVariable14b]
+    ;mov byte[byteAnswer14], al
+    ;mov byte[byteRemainder14], ah
+    
 
 ;	15. wordAnswer15 = doubleVariable15 / wordVariable15
 	mov ax, word[doubleVariable15]
@@ -197,10 +198,11 @@ _start:
 	mov word[wordAnswer15], ax
 
 ;	16. wordRemainder16 = wordVariable16a % wordVariable16b
-	mov ax, 0
-    mov dx, word[wordVariable16a]
-    div word[wordVariable16b]
-	mov word[wordRemainder16], dx
+	;mov ax, 0
+    	;mov dx, word[wordVariable16a]
+    	;div word[wordVariable16b]
+	;mov word[wordRemainder16], dx
+	
 
 ;=====IDIV=====
 
