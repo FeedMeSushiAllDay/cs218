@@ -184,11 +184,11 @@ _start:
 
 ;	14. byteAnswer14 = byteVariable14a / byteVariable14b
 ;	      byteRemainder14 =  byteVariable14a % byteVariable14b
-	mov al, 0 	
-    ;mov ah, byte[byteVariable14a] 
-   ; div byte[byteVariable14b]
-    ;mov byte[byteAnswer14], al
-    ;mov byte[byteRemainder14], ah
+	mov ax, 0	
+    	mov al, byte[byteVariable14a + 1] 
+   	div byte[byteVariable14b] ; byteVariable14a / byteVariable14b
+    	mov byte[byteAnswer14], al
+    	mov byte[byteRemainder14], ah ; byteVariable14a % byteVariable14b
     
 
 ;	15. wordAnswer15 = doubleVariable15 / wordVariable15
@@ -198,10 +198,10 @@ _start:
 	mov word[wordAnswer15], ax
 
 ;	16. wordRemainder16 = wordVariable16a % wordVariable16b
-	;mov ax, 0
-    	;mov dx, word[wordVariable16a]
-    	;div word[wordVariable16b]
-	;mov word[wordRemainder16], dx
+	mov dx, 0
+    	mov ax, word[wordVariable16a]
+    	div word[wordVariable16b]
+	mov word[wordRemainder16], dx
 	
 
 ;=====IDIV=====
