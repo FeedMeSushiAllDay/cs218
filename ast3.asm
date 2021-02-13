@@ -10,6 +10,9 @@ section .data
 	EXIT_SUCCESS equ 0
 	STANDARD_OUT equ 1
 	NEWLINE equ 10
+	
+	programDone db "Program Done.", NEWLINE 
+	stringLength dq 14
 
 	; store array values as double words
 
@@ -64,7 +67,7 @@ section .data
 
 section .bss
 ; Uninitialized Data
-grossProfitPerCustomer resd length   ; customer profit list
+grossProfitPerCustomer resd listSizes   ; customer profit list
 
 
 section .text
@@ -72,36 +75,54 @@ global _start
 _start:
 
 	; loop to add up income
-	mov rcx, listSizes ; ending condition
+	mov rcx, listSizes ; total size of array
 	mov rbx, 0 ; index value
 	incomeSumLoop: ; (for int i = listSizes; i > 0; i++)
 		; totalIncome (ax) = income[i] + income[i+1]
 		add eax, dword[income + rbx * 4]
+		inc rbx
 		dec rcx ; listSizes--
+		cmp rcx, 0 
 	jne incomeSumLoop ; conditional jump to end loop
 	mov dword[incomeTotal], eax ; put total value into variable
+	
+	
+	mov eax, 0 ; reset the eax register
 
-
+	
 	; loop to add up expenses 
 	mov rcx, listSizes 
 	mov rbx, 0 
 	expensesSumLoop: 
 		; totalExpenses (ax) = expenses[i] + expenses[i+1]
-		add ebx, dword[income + rbx * 4] ; use a different register
+		add eax, dword[expenses + rbx * 4] ; 
+		inc rbx
 		dec rcx 
+		cmp rcx, 0
 	jne expensesSumLoop 
 	mov dword[expensesTotal], eax
+	
 
+	mov eax, 0 ; reset the eax register
 
 	; loop to add up customers
 	mov rcx, listSizes 
 	mov rbx, 0 
 	customerSumLoop: 
 		; totalCustomers (ax) = customers[i] + customers[i+1]
-		add ecx, dword[income + rbx * 4]
-		dec rcx  
+		add eax, dword[customers + rbx * 4]
+		inc rbx
+		dec rcx 
+		cmp rcx, 0 
 	jne customerSumLoop 
 	mov dword[customerTotal], eax
+	
+	mov rax, SERVICE_WRITE
+	mov rdi, STANDARD_OUT
+	mov rsi, programDone
+	mov rdx, qword[stringLength]
+	syscall
+
 
 
 
