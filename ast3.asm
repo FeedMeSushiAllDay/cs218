@@ -3,18 +3,18 @@
 ; Date Last Modified: WRITE DATE HERE
 ; Program Description: Use conditional loops and jumps in x86
 
-section .data
+section .data ; **********************************************************************************
 	; System service call values
 	SERVICE_EXIT equ 60
 	SERVICE_WRITE equ 1
 	EXIT_SUCCESS equ 0
 	STANDARD_OUT equ 1
 	NEWLINE equ 10
-	
+
 	programDone db "Program Done.", NEWLINE 
 	stringLength dq 14
 
-	; store array values as double words
+	; double word arrays
 
 	; int income[] = "..."
 	income dd 2623050, 2001216, 2234775, 917928, 1651860, 2785944, 2867940, 1426334, 3445403, 321312
@@ -52,11 +52,17 @@ section .data
 				dd 4937, 6110, 4085, 3070, 5637, 5927, 5331, 4716, 4720, 5341
 				dd 4781, 4890, 4012, 3930, 5338, 4625, 4049, 6065, 6218, 5943
 
+
 	; variables
 	listSizes equ 100 
+
 	incomeTotal dd 0
 	expensesTotal dd 0
 	customerTotal dd 0
+
+	min dd 0
+	max dd 0
+
 	totalGrossProfit dd 0              
 	averageGrossProfit dd 0  
 	highestCostPerCustomer dd 0
@@ -65,12 +71,12 @@ section .data
 
 
 
-section .bss
+section .bss ; ***********************************************************************************
 ; Uninitialized Data
 grossProfitPerCustomer resd listSizes   ; customer profit list
 
 
-section .text
+section .text ; **********************************************************************************
 global _start
 _start:
 
@@ -83,45 +89,38 @@ _start:
 		inc rbx
 		dec rcx ; listSizes--
 		cmp rcx, 0 
-	jne incomeSumLoop ; conditional jump to end loop
+	jne incomeSumLoop ; conditional jump to stay in loop
 	mov dword[incomeTotal], eax ; put total value into variable
-	
 	
 	mov eax, 0 ; reset the eax register
 
-	
 	; loop to add up expenses 
 	mov rcx, listSizes 
 	mov rbx, 0 
 	expensesSumLoop: 
 		; totalExpenses (ax) = expenses[i] + expenses[i+1]
-		add eax, dword[expenses + rbx * 4] ; 
+		add eax, dword[expenses + rbx * 4] 
 		inc rbx
 		dec rcx 
 		cmp rcx, 0
 	jne expensesSumLoop 
 	mov dword[expensesTotal], eax
 	
-
-	mov eax, 0 ; reset the eax register
+	mov eax, 0
 
 	; loop to add up customers
 	mov rcx, listSizes 
 	mov rbx, 0 
 	customerSumLoop: 
-		; totalCustomers (ax) = customers[i] + customers[i+1]
+		; totalCustomers = customers[i] + customers[i+1]
 		add eax, dword[customers + rbx * 4]
 		inc rbx
 		dec rcx 
 		cmp rcx, 0 
 	jne customerSumLoop 
 	mov dword[customerTotal], eax
-	
-	mov rax, SERVICE_WRITE
-	mov rdi, STANDARD_OUT
-	mov rsi, programDone
-	mov rdx, qword[stringLength]
-	syscall
+
+	mov eax, 0
 
 
 
@@ -138,14 +137,29 @@ _start:
 	idiv ebx	
 	mov dword[averageGrossProfit], eax
 
+	; find maximum value
+
 	; highestCostPerCustomer = maximum(expenses[i]/customer[i])
-	
+
+	; find minimum value
 
 	; lowestIncomePerCustomer = minimum(incomes[i]/customer[i])
 
 	; profitableCount = count(incomes[i] – expenses[i] > 0)
 
 	; grossProfitPerCustomer[i] = (incomes[i]-expenses[i])/customers[i]
+	mov rcx, listSizes ; counter value
+	mov rbx, 0 ; index value
+	gpcLoop:
+		mov eax, dword[income + rbx * 4]
+		sub eax, dword[expenses + rbx * 4] ; (incomes[i]-expenses[i])
+		div dword[customers + rbx * 4] ; /customers[i]
+		mov dword[grossProfitPerCustomer + rbx * 4], eax ; = grossProfitPerCustomer[i]
+		inc rbx
+		dec rcx
+		cmp rcx, 0 
+	jne gpcLoop
+
 
 endProgram:
 ; 	Ends program with success return value
