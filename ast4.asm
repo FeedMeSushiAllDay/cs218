@@ -1,4 +1,8 @@
 ; Program Header Goes Here
+; Author: Brian Gong
+; Section: 1002
+; Date Last Modified: WRITE DATE HERE
+; Program Description: This program will practice using macros in x86 assembly.
 
 ; Macro 1 - Swap two values
 ; Macro 2 - Remove leading spaces
@@ -68,14 +72,13 @@ _start:
 ; Invoke macro 1 using qword[oldAddress] and qword[newAddress] as the arguments
 
 	; YOUR CODE HERE
-%macro swapValues 2
-	; parameters, %1 = oldAddress (rsi->rbx), %2 = newAddress (rbx->rsi)
-	;mov rax, %1
-	mov rbx, %2 
-	push rsi ; push into stack to hold variable
-	mov rsi, %2 ; replace with newAddress
-	pop rbx ; take stack value and put it into rbx
 
+%macro swapValues 2
+	; parameters, %1 = oldAddress, %2 = newAddress 
+	push %1 ; push oldAddress into stack
+	push %2 ; push newAddress into stack
+	pop %1 ; pop top value of stack into argument 1 (top value was newAddress)
+	pop %2 ; pop next top value into argument 2 (only value left was oldAddress)
 %endmacro
 
 swapValues qword[oldAddress], qword[newAddress] ; macro invoking
@@ -83,7 +86,7 @@ swapValues qword[oldAddress], qword[newAddress] ; macro invoking
 ; Macro 1 Test - Do not alter
 	mov rax, SYSTEM_WRITE
 	mov rdi, STANDARD_OUT
-	mov rsi, swapValues
+	mov rsi, macro1Label
 	mov rdx, 9
 	syscall
 	
@@ -98,20 +101,20 @@ swapValues qword[oldAddress], qword[newAddress] ; macro invoking
 ; strings are byte arrays
 
 	; YOUR CODE HERE
-%macro removeLeadingSpaces 1
-	mov rax, 0 ; store current character
-    mov rbx, 0 ; space count
+ %macro removeLeadingSpaces 1
+    mov rax, 0 ; store current character
+    mov rcx, 0 ; space count
     mov rsi, 0 ; index
     %%spacesCount: 
-        mov al, byte[%1 + rsi]   ; "  abc0"
-        cmp al, 32 ; CMP 2 SPACE
-        jne %%spacesDone
-        inc rbx
+        mov al, byte[%1 + rsi]  
+        cmp al, 32 ; compare (amount of spaces == 32)
+        jne %%spacesDone ; if not equal, jump to spacesDone loop
+        inc rcx
         inc rsi
-        jmp %%spacesCount
+        jmp %%spacesCount ; repeat loop
     %%spacesDone:
         push rax
-        inc rsi
+        ;inc rsi
     %%pushLoop:
         mov al, byte[%1+rsi]
         cmp al, NULL
@@ -121,7 +124,7 @@ swapValues qword[oldAddress], qword[newAddress] ; macro invoking
         jmp %%pushLoop
     %%pushDone:
         push rax     ; Push NULL [0, c, b, a] aka last push..!!
-        sub rsi, rbx     ; mov byte[rbx-rdx-1]
+        sub rsi, rcx     ; mov byte[rbx-rdx-1]
     %%popLoop:
         pop rax
         mov byte[%1 + rsi], al
@@ -151,6 +154,82 @@ swapValues qword[oldAddress], qword[newAddress] ; macro invoking
 ; Invoke macro 3 using macro3Integer1 and macro3Number1 as the arguments
 
 	; YOUR CODE HERE
+
+%macro thirdMacro 2 
+	mov rax, 0 ; sum
+    mov rbx, 0 
+    mov rsi, 0 ; index
+    mov rcx, 0    
+    mov r14, 0   
+    mov r14, 10 ; pre - set the register
+    mov r15, 0 ; bool act as sign
+    %%beforeMinus:
+        mov cl, byte[%2+rsi]   ; grab a byte of cl from rax
+        cmp cl, 32     ; COMPARE 2 SPACE
+        jne %%duringMinus
+        inc rsi
+        jmp %%beforeMinus
+    %%duringMinus:
+        cmp cl, 45 ; '-'
+        jne %%preLoop
+        mov r15, 1
+        inc rsi
+    %%preLoop:
+        mov cl, byte[%2+rsi]
+        cmp cl, 46    ; .
+        je %%decimalPoint
+        cmp cl, 107 ; k
+        je %%kLoop
+        cmp cl, 77  ; M
+        je %%mLoop
+        cmp cl, 66  ; B
+        je %%bLoop
+        sub cl, '0' ; digit = ch - 48 / basically changing from char to int!
+        mul r14
+        add rax, rcx
+        inc rsi
+        jmp %%preLoop
+    %%decimalPoint:
+        inc rsi          .... ; skip over
+    %%postLoop:
+        mov cl, byte[%2 + rsi]
+        cmp cl, 107   ; k
+        je %%kLoop
+        cmp cl, 77    ; M
+        je %%mLoop
+        cmp cl, 66    ; B
+        je %%bLoop
+        sub cl, '0'
+        mul r14
+        add rax, rcx
+        inc rsi
+        inc rbx ; pointer counter 
+        jmp %%postLoop
+    %%kLoop:
+        mov rcx, 3           ; k = thousand so x 3 times (mul)
+        sub rcx, rbx
+        jmp %%powLoop
+    %%mLoop:
+        mov rcx, 6            ; mul loop x 6 times = million
+        sub rcx, rbx
+        jmp %%powLoop
+    %%bLoop:
+        mov rcx, 9              ; mul x 9 to get a billion
+        sub rcx, rbx           ; then subt by decimalDigits 
+        jmp %%powLoop          ; 10^(3/6/9-decimalDigit)
+    %%powLoop:
+        cmp rcx, 0  ; find NULL
+        je %%powDone  
+        imul r14 ; in case is signed..
+        dec rcx
+        jmp %%powLoop
+    %%powDone:
+        cmp r15, 0          ; if positive or negative ?!
+        je %%output               ; is postive!! 
+        neg rax                    ; was negative...
+    %%output: 
+        mov qword[%1], rax ; END 
+%endmacro
 
 ; Macro 3 - Test 1 Results - Do not alter
 	mov rax, SYSTEM_WRITE
