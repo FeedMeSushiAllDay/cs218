@@ -105,37 +105,42 @@ swapValues qword[oldAddress], qword[newAddress] ; macro invoking
     mov rax, 0 ; store current character
     mov rcx, 0 ; space count
     mov rsi, 0 ; index
+
+	; Count 10 Leading Spaces
     %%spacesCount: 
         mov al, byte[%1 + rsi]  
         cmp al, 32 ; compare (amount of spaces == 32)
-        jne %%spacesDone ; if not equal, jump to spacesDone loop
+        jne %%pushLoop ; if not equal, jump to push loop
         inc rcx
         inc rsi
         jmp %%spacesCount ; repeat loop
-    %%spacesDone:
-        push rax
-        ;inc rsi
+
+	; After spaces, push characters to the stack until you find "null"
     %%pushLoop:
-        mov al, byte[%1+rsi]
-        cmp al, NULL
-        je %%pushDone
+        mov al, byte[%1 + rsi]
+        cmp al, NULL ; have we reached null?
+        je %%pushDone ; if we reach null we're done pushing
         push rax
         inc rsi
-        jmp %%pushLoop
+        jmp %%pushLoop ; repeat loop
+
     %%pushDone:
-        push rax     ; Push NULL [0, c, b, a] aka last push..!!
+        push rax   
         sub rsi, rcx     ; mov byte[rbx-rdx-1]
+
     %%popLoop:
         pop rax
         mov byte[%1 + rsi], al
         dec rsi
         cmp rsi, 0
         jne %%popLoop ; jump if not equal - rsi ^ 0
+
     %%lastPop: 
         pop rax
         mov byte[%1 + rsi], al ; mov byte[rbx-rdx-1], ch 
 %endmacro
 
+removeLeadingSpaces macro2message ; invoke macro
 
 ; Macro 2 Test - Do not alter
 	mov rax, SYSTEM_WRITE
@@ -155,24 +160,25 @@ swapValues qword[oldAddress], qword[newAddress] ; macro invoking
 
 	; YOUR CODE HERE
 
-%macro thirdMacro 2 
+	KMB_string macro3Integer1, macro3Number1 ; invoke
+
+%macro KMB_string 2 
 	mov rax, 0 ; sum
     mov rbx, 0 
     mov rsi, 0 ; index
-    mov rcx, 0    
-    mov r14, 0   
-    mov r14, 10 ; pre - set the register
-    mov r15, 0 ; bool act as sign
+    mov rcx, 0      
+    mov r8, 10 ; pre - set the register
+    mov r9, 0 ; bool act as sign
     %%beforeMinus:
-        mov cl, byte[%2+rsi]   ; grab a byte of cl from rax
-        cmp cl, 32     ; COMPARE 2 SPACE
+        mov cl, byte[%2+rsi]   ; grab a byte of cl from 64-bit rax
+        cmp cl, 32    
         jne %%duringMinus
         inc rsi
         jmp %%beforeMinus
     %%duringMinus:
         cmp cl, 45 ; '-'
         jne %%preLoop
-        mov r15, 1
+        mov r9, 1
         inc rsi
     %%preLoop:
         mov cl, byte[%2+rsi]
@@ -185,12 +191,12 @@ swapValues qword[oldAddress], qword[newAddress] ; macro invoking
         cmp cl, 66  ; B
         je %%bLoop
         sub cl, '0' ; digit = ch - 48 / basically changing from char to int!
-        mul r14
+        mul r8
         add rax, rcx
         inc rsi
         jmp %%preLoop
     %%decimalPoint:
-        inc rsi          .... ; skip over
+        inc rsi          
     %%postLoop:
         mov cl, byte[%2 + rsi]
         cmp cl, 107   ; k
@@ -200,33 +206,33 @@ swapValues qword[oldAddress], qword[newAddress] ; macro invoking
         cmp cl, 66    ; B
         je %%bLoop
         sub cl, '0'
-        mul r14
+        mul r8
         add rax, rcx
         inc rsi
         inc rbx ; pointer counter 
         jmp %%postLoop
     %%kLoop:
-        mov rcx, 3           ; k = thousand so x 3 times (mul)
+        mov rcx, 3           
         sub rcx, rbx
         jmp %%powLoop
     %%mLoop:
-        mov rcx, 6            ; mul loop x 6 times = million
+        mov rcx, 6          
         sub rcx, rbx
         jmp %%powLoop
     %%bLoop:
-        mov rcx, 9              ; mul x 9 to get a billion
-        sub rcx, rbx           ; then subt by decimalDigits 
-        jmp %%powLoop          ; 10^(3/6/9-decimalDigit)
+        mov rcx, 9             
+        sub rcx, rbx          
+        jmp %%powLoop          
     %%powLoop:
         cmp rcx, 0  ; find NULL
         je %%powDone  
-        imul r14 ; in case is signed..
+        imul r8 ; in case is signed..
         dec rcx
         jmp %%powLoop
     %%powDone:
-        cmp r15, 0          ; if positive or negative ?!
-        je %%output               ; is postive!! 
-        neg rax                    ; was negative...
+        cmp r9, 0          
+        je %%output              
+        neg rax                    
     %%output: 
         mov qword[%1], rax ; END 
 %endmacro
