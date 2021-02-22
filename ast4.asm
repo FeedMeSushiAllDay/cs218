@@ -69,13 +69,12 @@ _start:
 
 	; YOUR CODE HERE
 %macro swapValues 2
-	; parameters, %1 = oldAddress, %2 = newAddress
-	mov rax, %1 ; put oldAddress into rax
-	mov rbx, %2 ; put newAddress into rbx
-	push rax ; push rax into stack to hold variable
-	mov rax, %2 ; replace rax with newAddress
+	; parameters, %1 = oldAddress (rsi->rbx), %2 = newAddress (rbx->rsi)
+	;mov rax, %1
+	mov rbx, %2 
+	push rsi ; push into stack to hold variable
+	mov rsi, %2 ; replace with newAddress
 	pop rbx ; take stack value and put it into rbx
-	; swap(oldAddress, newAddress)
 
 %endmacro
 
@@ -84,7 +83,7 @@ swapValues qword[oldAddress], qword[newAddress] ; macro invoking
 ; Macro 1 Test - Do not alter
 	mov rax, SYSTEM_WRITE
 	mov rdi, STANDARD_OUT
-	mov rsi, macro1Label
+	mov rsi, swapValues
 	mov rdx, 9
 	syscall
 	
@@ -99,15 +98,15 @@ swapValues qword[oldAddress], qword[newAddress] ; macro invoking
 ; strings are byte arrays
 
 	; YOUR CODE HERE
-%macro countStringLength 1
+%macro removeLeadingSpaces 1
 	mov rax, 0 ; store current character
-    mov rcx, 0 ; space count
+    mov rbx, 0 ; space count
     mov rsi, 0 ; index
     %%spacesCount: 
         mov al, byte[%1 + rsi]   ; "  abc0"
         cmp al, 32 ; CMP 2 SPACE
         jne %%spacesDone
-        inc rcx
+        inc rbx
         inc rsi
         jmp %%spacesCount
     %%spacesDone:
@@ -122,7 +121,7 @@ swapValues qword[oldAddress], qword[newAddress] ; macro invoking
         jmp %%pushLoop
     %%pushDone:
         push rax     ; Push NULL [0, c, b, a] aka last push..!!
-        sub rsi, rcx     ; mov byte[rbx-rdx-1]
+        sub rsi, rbx     ; mov byte[rbx-rdx-1]
     %%popLoop:
         pop rax
         mov byte[%1 + rsi], al
