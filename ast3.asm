@@ -5,14 +5,9 @@
 
 section .data ; **********************************************************************************
 	; System service call values
-	SERVICE_EXIT equ 60
-	SERVICE_WRITE equ 1
-	EXIT_SUCCESS equ 0
-	STANDARD_OUT equ 1
-	NEWLINE equ 10
+	programEnd equ 60
+	finish equ 0
 
-	programDone db "Program Done.", NEWLINE 
-	stringLength dq 14
 
 	; double word arrays
 
@@ -63,17 +58,17 @@ section .data ; ****************************************************************
 	min dd 0
 	max dd 0
 
-	totalGrossProfit dd 0              
-	averageGrossProfit dd 0  
-	highestCostPerCustomer dd 0
-	lowestCostPerCustomer dd 0     
-	profitableStoreCount dd 0 
 
 
 
 section .bss ; ***********************************************************************************
 ; Uninitialized Data
-grossProfitPerCustomer resd listSizes   ; customer profit list
+	grossProfitsPerCustomer resd listSizes
+	totalGrossProfit resd 1
+	averageGrossProfit resd 1
+	highestCostPerCustomer resd 1
+	lowestIncomePerCustomer resd 1
+	profitableStoreCount resd 1
 
 
 section .text ; **********************************************************************************
@@ -81,8 +76,9 @@ global _start
 _start:
 
 	; loop to add up income
+
 	mov rcx, listSizes ; total size of array
-	mov rbx, 0 ; index value
+	mov rbx, 0 ; loop counter value
 	incomeSumLoop: ; (for int i = listSizes; i > 0; i++)
 		; totalIncome (ax) = income[i] + income[i+1]
 		add eax, dword[income + rbx * 4]
@@ -94,7 +90,10 @@ _start:
 	
 	mov eax, 0 ; reset the eax register
 
+
+
 	; loop to add up expenses 
+
 	mov rcx, listSizes 
 	mov rbx, 0 
 	expensesSumLoop: 
@@ -107,6 +106,8 @@ _start:
 	mov dword[expensesTotal], eax
 	
 	mov eax, 0
+
+
 
 	; loop to add up customers
 	mov rcx, listSizes 
@@ -123,46 +124,114 @@ _start:
 	mov eax, 0
 
 
-
-
 	; totalGrossProfit = sum (income) - sum(expenses)
-	mov eax, dword[incomeTotal] 
-	sub eax, dword[expensesTotal]
-	mov dword[totalGrossProfit], eax
+	mov rcx, listSizes
+	mov rbx, 0 ; loop counter value
+	mov r9d, 0 ; sum value
+	calculateGrossProfitSumLoop:
+		add r9d, dword[incomes + rbx * 4]
+		sub r9d, dword[expenses + rbx * 4]
+		
+		inc rbx
+	loop calculateGrossProfitSumLoop
+
+	mov dword[totalGrossProfit], r9d
+
 
 	; average gross profit = totalGrossProfit / 100
-	mov eax, dword[totalGrossProfit]
-	mov ebx, 100
-	cdq      
-	idiv ebx	
+	mov eax, r9d ; use r9d register
+	cdq ; doubleword to quadword extension
+	mov ecx, listSizes
+	idiv ecx
 	mov dword[averageGrossProfit], eax
 
-	; find maximum value
 
 	; highestCostPerCustomer = maximum(expenses[i]/customer[i])
+	mov rcx, STORE_COUNT-1
+	mov rbx, 1
+	mov eax, dword[expenses]
+	cdq
+	mov r8d, dword[customers]
+	idiv r8d
+	mov r8d, eax ; highest cost per customer
+	findHighestCostLoop:
+		mov eax, dword[expenses + rbx * 4]
+		cdq
+		mov r9d, dword[customers + rbx * 4]
+		idiv r9d
+		
+		cmp eax, r8d
+		jle nextHighest
+			mov r8d, eax
+		nextHighest:
+		
+		inc rbx
+	loop findHighestCostLoop
 
-	; find minimum value
+	mov dword[highestCostPerCustomer], r8d
+
 
 	; lowestIncomePerCustomer = minimum(incomes[i]/customer[i])
+	mov rcx, STORE_COUNT-1
+	mov rbx, 1
+	mov eax, dword[incomes]
+	cdq
+	mov r8d, dword[customers]
+	idiv r8d
+	mov r8d, eax ; lowest income per customer
+	findLowestIncomeLoop:
+		mov eax, dword[incomes + rbx * 4]
+		cdq
+		mov r9d, dword[customers + rbx * 4]
+		idiv r9d
+		
+		cmp eax, r8d
+		jge nextLowest
+			mov r8d, eax
+		nextLowest:
+		
+		inc rbx
+	loop findLowestIncomeLoop
+
+	mov dword[lowestIncomePerCustomer], r8d
+
 
 	; profitableCount = count(incomes[i] – expenses[i] > 0)
+	mov rcx, listSize
+	mov rbx, 0 
+	mov eax, 0 ; loop counter value
+	countProfitableLoop:
+		mov r8d, dword[incomes + rbx * 4]
+	
+		cmp r8d, dword[expenses + rbx * 4]
+		jle skipCount ; less than or equal to
+			inc eax
+		skipCount:
+	
+		inc rbx
+	loop countProfitableLoop
+
+	mov dword[profitableStoreCount], eax
+
 
 	; grossProfitPerCustomer[i] = (incomes[i]-expenses[i])/customers[i]
-	mov rcx, listSizes ; counter value
-	mov rbx, 0 ; index value
-	gpcLoop:
-		mov eax, dword[income + rbx * 4]
-		sub eax, dword[expenses + rbx * 4] ; (incomes[i]-expenses[i])
-		div dword[customers + rbx * 4] ; /customers[i]
-		mov dword[grossProfitPerCustomer + rbx * 4], eax ; = grossProfitPerCustomer[i]
+	mov rcx, listSize
+	mov rbx, 0 ; loop counter value
+	calculateGrossProfitLoop:
+		mov eax, dword[incomes + rbx * 4]
+		sub eax, dword[expenses + rbx * 4]
+		mov r8d, dword[customers + rbx * 4]
+		
+		cdq ; extend instruction
+		idiv r8d ; signed division
+		mov dword[grossProfitsPerCustomer + rbx * 4], eax
+
 		inc rbx
-		dec rcx
-		cmp rcx, 0 
-	jne gpcLoop
+	loop calculateGrossProfitLoop
 
 
 endProgram:
 ; 	Ends program with success return value
-	mov rax, SERVICE_EXIT
-	mov rdi, EXIT_SUCCESS
+	mov rax, programEnd
+	mov rdi, finish
 	syscall
