@@ -125,12 +125,12 @@ promptUser:
 
 	; return answer.length()
 	readDone:
-		cmp rcx, maxInputSize ; if # characters ≥ max buffer size
-		jae clearBuffer
+		cmp rcx, maxInputSize ; compare # characters to max buffer size
+		jae clearBuffer ; if greater then clear buffer and return -1
 		
 		mov byte [rbx], null ; add null termination
-		mov rax, rcx ; return input size
-		jne functionDone
+		mov rax, rcx ; return input size ; value wrong?
+		jmp functionDone 
 
 	; find a way to get past this function if the characters <= max buffer size
 	; return -1
@@ -164,7 +164,7 @@ getNullStrLength:
 		jmp strCountLoop
 
 	strCountDone:
-		mov byte[rdx], eax ; return length
+		mov byte[rcx], eax ; return length
 
 
 	pop rbx ; Restore Preserved Registers
